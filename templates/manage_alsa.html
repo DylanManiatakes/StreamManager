@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage ALSA Devices</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Manage ALSA Devices</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <form method="POST">
+            <section class="card">
+                <h2>Playback Device</h2>
+                <label for="playback_device">Select Playback Device:</label>
+                <select name="playback_device" id="playback_device" class="dropdown">
+                    {% for card in cards %}
+                        <option value="{{ card }}" {% if playback_device == card %}selected{% endif %}>{{ card }}</option>
+                    {% endfor %}
+                </select>
+            </section>
+
+            <section class="card">
+                <h2>Microphone Device</h2>
+                <label for="mic_device">Select Microphone Device:</label>
+                <select name="mic_device" id="mic_device" class="dropdown">
+                    {% for mixer in mixers %}
+                        <option value="{{ mixer }}" {% if mic_device == mixer %}selected{% endif %}>{{ mixer }}</option>
+                    {% endfor %}
+                </select>
+            </section>
+
+            <section class="card">
+                <h2>Volume</h2>
+                <label for="volume">Adjust Volume:</label>
+                <input type="range" id="volume" name="volume" min="0" max="100" value="{{ volume }}" class="slider">
+                <span>{{ volume }}%</span>
+            </section>
+
+            <button type="submit" class="btn">Update Settings</button>
+        </form>
+    </main>
+    <footer>
+        <p>StreamManager &copy; 2024 | Built by Dylan Maniatakes</p>
+    </footer>
+</body>
+</html>

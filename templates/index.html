@@ -19,11 +19,14 @@
             <h2>Service Status</h2>
             <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
             <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+            <p><strong>Icecast:</strong> <span id="icecast-status">{{ icecast_status }}</span></p>    
+
         </section>
         <section class="card">
             <h2>Controls</h2>
             <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
             <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
+            <button onclick="restartService('/icecast/restart')">Restart IceCast</button>
         </section>
         <section class="card">
             <h2>ALSA Mixer</h2>
@@ -31,10 +34,17 @@
             <a href="/alsa/volume" class="btn">Manage ALSA</a>
         </section>
         <section class="card">
-            <h2>FFmpeg Status</h2>
-            <p>Stream Status: <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
-            <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
+            <h2>Icecast Status</h2>
+            <p>Stream Status: <span id="icecast-status">{{ icecast_status }}</span></p>
+            <button onclick="openIcecast()">View Icecast Server</button>
         </section>
+        <script>
+            function openIcecast() {
+                // Get the current host and dynamically redirect to port 8000
+                const host = window.location.hostname;
+                window.open(`http://${host}:8000`, "_blank");
+            }
+        </script>
     </main>
     <footer>
         <p>Broadcastify Stream Manager &copy; 2024 | Built by Dylan Maniatakes</p>

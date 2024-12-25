@@ -5,7 +5,7 @@ echo "Starting Stream Full Installer..."
 # Update system and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev alsa-core || {
+sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev alsa-base || {
     echo "Failed to install required packages" >&2
     exit 1
 }
@@ -56,8 +56,8 @@ password        = YOUR_PASSWORD
 mountPoint      = YOUR_MOUNTPOINT
 EOF
 
-# Install systemd service
-echo "Installing systemd service with virtual environment support..."
+# Install systemd service for StreamManager
+echo "Installing systemd service for StreamManager..."
 cat <<EOF > /etc/systemd/system/StreamManager.service
 [Unit]
 Description=Stream Manager
@@ -78,8 +78,28 @@ Environment="PYTHONUNBUFFERED=1"
 WantedBy=multi-user.target
 EOF
 
+# Install systemd service for FFmpeg
+echo "Installing systemd service for FFmpeg..."
+cat <<EOF > /etc/systemd/system/ffmpeg-stream.service
+[Unit]
+Description=FFmpeg Stream Service
+After=network.target sound.target
+
+[Service]
+ExecStart=/usr/bin/ffmpeg -f alsa -i hw:0,0 -c:a libmp3lame -b:a 64k -f mp3 icecast://user:password@server:port/mountpoint
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload and enable services
+echo "Reloading and enabling systemd services..."
 sudo systemctl daemon-reload
 sudo systemctl enable StreamManager.service
+sudo systemctl enable ffmpeg-stream.service
 sudo systemctl start StreamManager.service
+sudo systemctl start ffmpeg-stream.service
 
-echo "Stream Manager Service with DarkIce and FFmpeg control installed and started!"
+echo "Stream Manager and FFmpeg services installed and started!"
