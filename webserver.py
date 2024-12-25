@@ -58,3 +58,6 @@ def edit_darkice():
         except FileNotFoundError:
             config_content = "Configuration file not found."
         return render_template("edit_darkice.html", config=config_content)
+    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

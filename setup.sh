@@ -23,7 +23,17 @@ pip install flask || {
 # Copy application files
 echo "Copying application files..."
 mkdir -p /opt/StreamManager/templates
+mkdir -p /opt/StreamManager/static
 mkdir -p /opt/StreamManager/scripts
+
+cp ./webserver.py /opt/StreamManager/webserver.py
+cp ./templates/index.html /opt/StreamManager/templates/index.html
+cp ./templates/edit_darkice.html /opt/StreamManager/templates/edit_darkice.html
+cp -r ./static/* /opt/StreamManager/static/
+cp ./scripts/watchdog.sh /opt/StreamManager/scripts/watchdog.sh
+
+# Make watchdog script executable
+chmod +x /opt/StreamManager/scripts/watchdog.sh
 
 cp ./webserver.py /opt/StreamManager/webserver.py
 cp ./templates/index.html /opt/StreamManager/templates/index.html
