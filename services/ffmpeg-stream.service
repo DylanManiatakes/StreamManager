@@ -1,0 +1,11 @@
+[Unit]
+Description=FFmpeg Stream Service
+After=network.target sound.target
+
+[Service]
+ExecStart=/usr/bin/ffmpeg -f lavfi -i sine=frequency=1000 -c:a libmp3lame -b:a 64k -f mp3 icecast://user:password@server:port/mountpoint
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -58,10 +58,6 @@ def edit_darkice():
             config_content = "Configuration file not found."
         return render_template("edit_darkice.html", config=config_content)
     
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
-
-
  # Alsaaudio
 @app.route("/alsa/volume", methods=["GET", "POST"])
 def alsa_volume():
@@ -73,3 +69,6 @@ def alsa_volume():
     else:
         current_volume = mixer.getvolume()[0]
         return render_template("alsa_volume.html", volume=current_volume)
+    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080, debug=True)
