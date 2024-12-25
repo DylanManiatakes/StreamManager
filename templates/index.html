@@ -4,19 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Broadcastify Manager</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Broadcastify Stream Manager</h1>
-    <div class="status">
-        <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
-        <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
-    </div>
-    <div class="controls">
-        <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
-        <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
-        <a href="/darkice/edit" class="btn">Edit DarkIce Config</a>
-    </div>
+    <header>
+        <h1>Broadcastify Stream Manager</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/darkice/edit">Edit DarkIce Config</a>
+        </nav>
+    </header>
+    <main>
+        <section class="card">
+            <h2>Service Status</h2>
+            <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
+            <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+        </section>
+        <section class="card">
+            <h2>Controls</h2>
+            <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
+            <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
+        </section>
+        <section class="card">
+            <h2>ALSA Mixer (Coming Soon)</h2>
+            <p>Manage ALSA configurations and volume controls directly from here.</p>
+        </section>
+    </main>
+    <footer>
+        <p>Broadcastify Manager &copy; 2024 | Built with Flask</p>
+    </footer>
     <script>
         function restartService(endpoint) {
             fetch(endpoint, { method: 'POST' })

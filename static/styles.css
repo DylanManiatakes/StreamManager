@@ -1,37 +1,72 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 0;
+    padding: 0;
     background-color: #f4f4f9;
     color: #333;
 }
 
-h1 {
-    color: #4a90e2;
+header {
+    background-color: #4a90e2;
+    color: white;
+    padding: 10px;
+    text-align: center;
 }
 
-.status {
-    margin-bottom: 20px;
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
 }
 
-.controls {
-    margin-bottom: 20px;
+header nav {
+    margin-top: 10px;
 }
 
-button, .btn {
+header nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+main {
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 300px;
+    text-align: center;
+}
+
+button {
     background-color: #4a90e2;
     color: white;
     border: none;
+    border-radius: 5px;
     padding: 10px 15px;
-    text-decoration: none;
+    font-size: 1rem;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-button:hover, .btn:hover {
+button:hover {
     background-color: #357ab8;
 }
 
-textarea {
-    width: 100%;
+footer {
+    background-color: #4a90e2;
+    color: white;
+    text-align: center;
     padding: 10px;
-    font-family: monospace;
+    position: relative;
+    bottom: 0;
+    width: 100%;
 }
