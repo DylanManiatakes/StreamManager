@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Manager</title>
+</head>
+<body>
+    <h1>Broadcastify Stream Manager</h1>
+    <h2>Service Status</h2>
+    <p>DarkIce: <span id="darkice-status">{{ darkice_status }}</span></p>
+    <p>FFmpeg: <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+
+    <h2>Controls</h2>
+    <button onclick="controlService('/darkice/restart', 'darkice-status')">Restart DarkIce</button>
+    <button onclick="controlService('/ffmpeg/restart', 'ffmpeg-status')">Restart FFmpeg</button>
+
+    <script>
+        function controlService(endpoint, statusElementId) {
+            fetch(endpoint, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    document.getElementById(statusElementId).innerText = 'Restarted';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
