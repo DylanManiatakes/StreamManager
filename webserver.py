@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 import subprocess
 import os
+import alsaaudio
 
 app = Flask(__name__)
 DARKICE_CONFIG_PATH = "/etc/darkice/darkice.cfg"
@@ -61,3 +62,16 @@ def edit_darkice():
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+
+ # Alsaaudio
+@app.route("/alsa/volume", methods=["GET", "POST"])
+def alsa_volume():
+    mixer = alsaaudio.Mixer()
+    if request.method == "POST":
+        volume = int(request.form.get("volume"))
+        mixer.setvolume(volume)
+        return jsonify({"status": "success", "message": f"Volume set to {volume}"})
+    else:
+        current_volume = mixer.getvolume()[0]
+        return render_template("alsa_volume.html", volume=current_volume)

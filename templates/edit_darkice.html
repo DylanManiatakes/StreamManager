@@ -4,15 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit DarkIce Configuration</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Edit DarkIce Configuration</h1>
-    <form method="POST">
-        <textarea name="config" rows="20" cols="80">{{ config }}</textarea>
-        <br>
-        <button type="submit">Save</button>
-        <a href="/" class="btn">Cancel</a>
-    </form>
+    <header>
+        <h1>Edit DarkIce Configuration</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <section class="card">
+            <h2>DarkIce Config</h2>
+            <form method="POST">
+                <textarea name="config" rows="20">{{ config }}</textarea>
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <a href="/" class="btn">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>Broadcastify Stream Manager &copy; 2024 | Built by Dylan Maniatakes</p>
+    </footer>
 </body>
 </html>

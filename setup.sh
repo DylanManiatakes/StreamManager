@@ -5,7 +5,7 @@ echo "Starting Stream Full Installer..."
 # Update system and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv || {
+sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv alsa-base || {
     echo "Failed to install required packages" >&2
     exit 1
 }
