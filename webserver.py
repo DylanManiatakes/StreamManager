@@ -32,14 +32,12 @@ def restart_darkice():
 
 # Restart FFmpeg
 @app.route("/ffmpeg/restart", methods=["POST"])
-def restart_ffmpeg():
+def restart_ffmpeg_service():
     try:
-        subprocess.run(["sudo", "pkill", "-f", "ffmpeg"])
-        subprocess.Popen(["ffmpeg", "-f", "alsa", "-i", "default", "-c:a", "libmp3lame", "-b:a", "64k",
-                          "-f", "mp3", "icecast://user:password@server:port/mountpoint"])
+        subprocess.run(["sudo", "systemctl", "restart", "ffmpeg-stream.service"], check=True)
         return jsonify({"status": "success", "message": "FFmpeg restarted successfully"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Failed to restart FFmpeg: {e}"})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "message": f"Failed to restart FFmpeg: {str(e)}"})
 
 # Edit DarkIce Configuration
 @app.route("/darkice/edit", methods=["GET", "POST"])

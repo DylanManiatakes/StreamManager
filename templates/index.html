@@ -3,28 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALSA Volume Control</title>
+    <title>Broadcastify Manager</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <header>
-        <h1>ALSA Volume Control</h1>
+        <h1>Broadcastify Stream Manager</h1>
         <nav>
             <a href="/">Dashboard</a>
+            <a href="/darkice/edit">Edit DarkIce Config</a>
         </nav>
     </header>
     <main>
         <section class="card">
-            <h2>Current Volume: {{ volume }}%</h2>
-            <form method="POST">
-                <label for="volume">Set Volume:</label>
-                <input type="range" id="volume" name="volume" min="0" max="100" value="{{ volume }}">
-                <button type="submit">Update</button>
-            </form>
+            <h2>Service Status</h2>
+            <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
+            <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+        </section>
+        <section class="card">
+            <h2>Controls</h2>
+            <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
+            <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
+        </section>
+        <section class="card">
+            <h2>ALSA Mixer</h2>
+            <p>Adjust volume and other sound settings.</p>
+            <a href="/alsa/volume" class="btn">Manage ALSA</a>
+        </section>
+        <section class="card">
+            <h2>FFmpeg Status</h2>
+            <p>Stream Status: <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+            <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
         </section>
     </main>
     <footer>
         <p>Broadcastify Stream Manager &copy; 2024 | Built by Dylan Maniatakes</p>
     </footer>
+    <script>
+        function restartService(endpoint) {
+            fetch(endpoint, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
 </body>
 </html>
