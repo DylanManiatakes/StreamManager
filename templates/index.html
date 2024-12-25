@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Manager</title>
+    <title>Broadcastify Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h1>Broadcastify Stream Manager</h1>
-    <h2>Service Status</h2>
-    <p>DarkIce: <span id="darkice-status">{{ darkice_status }}</span></p>
-    <p>FFmpeg: <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
-
-    <h2>Controls</h2>
-    <button onclick="controlService('/darkice/restart', 'darkice-status')">Restart DarkIce</button>
-    <button onclick="controlService('/ffmpeg/restart', 'ffmpeg-status')">Restart FFmpeg</button>
-
+    <div class="status">
+        <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
+        <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
+    </div>
+    <div class="controls">
+        <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
+        <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
+        <a href="/darkice/edit" class="btn">Edit DarkIce Config</a>
+    </div>
     <script>
-        function controlService(endpoint, statusElementId) {
+        function restartService(endpoint) {
             fetch(endpoint, { method: 'POST' })
                 .then(response => response.json())
-                .then(data => {
-                    alert(data.message);
-                    document.getElementById(statusElementId).innerText = 'Restarted';
-                })
+                .then(data => alert(data.message))
                 .catch(error => console.error('Error:', error));
         }
     </script>

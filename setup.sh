@@ -20,6 +20,18 @@ pip install flask || {
     exit 1
 }
 
+# Copy application files
+echo "Copying application files..."
+mkdir -p /opt/StreamManager/templates
+mkdir -p /opt/StreamManager/scripts
+
+cp ./webserver.py /opt/StreamManager/webserver.py
+cp ./templates/index.html /opt/StreamManager/templates/index.html
+cp ./scripts/watchdog.sh /opt/StreamManager/scripts/watchdog.sh
+
+# Make watchdog script executable
+chmod +x /opt/StreamManager/scripts/watchdog.sh
+
 # Create DarkIce configuration
 echo "Creating default DarkIce configuration..."
 mkdir -p /etc/darkice
@@ -46,7 +58,7 @@ mountPoint      = YOUR_MOUNTPOINT
 EOF
 
 # Install systemd service
-echo "Installing systemd service with DarkIce and FFmpeg control..."
+echo "Installing systemd service with virtual environment support..."
 cat <<EOF > /etc/systemd/system/StreamManager.service
 [Unit]
 Description=Stream Manager
@@ -55,7 +67,7 @@ After=network.target sound.target
 [Service]
 ExecStartPre=/bin/bash -c 'pgrep darkice || sudo systemctl start darkice'
 ExecStartPre=/bin/bash -c 'pgrep ffmpeg || echo "Starting FFmpeg if configured separately."'
-ExecStart=/usr/bin/python3 /opt/StreamManager/webserver.py
+ExecStart=/bin/bash -c 'source /opt/StreamManager/env/bin/activate && python3 /opt/StreamManager/webserver.py'
 WorkingDirectory=/opt/StreamManager
 User=root
 Group=root
