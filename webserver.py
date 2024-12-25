@@ -68,18 +68,7 @@ def edit_darkice():
             config_content = "Configuration file not found."
         return render_template("edit_darkice.html", config=config_content)
 
-# ALSA Volume Control
-@app.route("/alsa/volume", methods=["GET", "POST"])
-def alsa_volume():
-    mixer = alsaaudio.Mixer()
-    if request.method == "POST":
-        volume = int(request.form.get("volume"))
-        mixer.setvolume(volume)
-        return redirect(url_for("alsa_volume"))
-    else:
-        current_volume = mixer.getvolume()[0]
-        return render_template("alsa_volume.html", volume=current_volume)
-    
+# ALSA Control    
 @app.route("/alsa/manage", methods=["GET", "POST"])
 def manage_alsa():
     mixer = alsaaudio.Mixer()  # Initialize mixer for volume control

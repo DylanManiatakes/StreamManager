@@ -25,10 +25,9 @@ pip install flask pyalsaaudio || {
 echo "Copying application files..."
 mkdir -p "$INSTALL_DIR/templates" "$INSTALL_DIR/static" "$INSTALL_DIR/scripts"
 cp ./webserver.py "$INSTALL_DIR/webserver.py"
-cp ./templates/index.html "$INSTALL_DIR/templates/index.html"
-cp ./templates/edit_darkice.html "$INSTALL_DIR/templates/edit_darkice.html"
+cp -r ./templates/* "$INSTALL_DIR/templates/"
 cp -r ./static/* "$INSTALL_DIR/static/"
-cp ./scripts/watchdog.sh "$INSTALL_DIR/scripts/watchdog.sh"
+cp -r ./scripts/* "$INSTALL_DIR/scripts/"
 chmod +x "$INSTALL_DIR/scripts/watchdog.sh"
 
 # Create DarkIce configuration
@@ -78,15 +77,35 @@ Environment="PYTHONUNBUFFERED=1"
 WantedBy=multi-user.target
 EOF
 
+# Install systemd service for DarkIce
+echo "Installing systemd service for DarkIce..."
+cat <<EOF > /etc/systemd/system/darkice.service
+[Unit]
+Description=DarkIce Streaming Service
+After=network.target StreamManager.service
+BindsTo=StreamManager.service
+PartOf=StreamManager.service
+
+[Service]
+ExecStart=/usr/bin/darkice -c /etc/darkice/darkice.cfg
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Install systemd service for FFmpeg
 echo "Installing systemd service for FFmpeg..."
 cat <<EOF > /etc/systemd/system/ffmpeg-stream.service
 [Unit]
 Description=FFmpeg Stream Service
-After=network.target sound.target
+After=network.target sound.target StreamManager.service
+BindsTo=StreamManager.service
+PartOf=StreamManager.service
 
 [Service]
-ExecStart=/usr/bin/ffmpeg -f alsa -i hw:0,0 -c:a libmp3lame -b:a 64k -f mp3 icecast://user:password@server:port/mountpoint
+ExecStart=/usr/bin/ffmpeg -f alsa -i hw:0,0 -c:a libmp3lame -b:a 64k -f mp3 icecast://source:password@localhost:8000/stream
 Restart=always
 RestartSec=5
 
@@ -98,8 +117,8 @@ EOF
 echo "Reloading and enabling systemd services..."
 sudo systemctl daemon-reload
 sudo systemctl enable StreamManager.service
+sudo systemctl enable darkice.service
 sudo systemctl enable ffmpeg-stream.service
 sudo systemctl start StreamManager.service
-sudo systemctl start ffmpeg-stream.service
 
-echo "Stream Manager and FFmpeg services installed and started!"
+echo "Stream Manager and dependent services installed and started!"
