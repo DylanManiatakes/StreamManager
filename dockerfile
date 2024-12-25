@@ -12,7 +12,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     python3 python3-pip python3-venv \
-    darkice ffmpeg alsa-utils libasound2-dev systemd \
+    darkice ffmpeg alsa-utils libasound2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application files
@@ -25,12 +25,6 @@ RUN python3 -m venv /app/env && \
 # Expose the Flask app port
 EXPOSE 8080
 
-# Copy service files to systemd directory
-RUN mkdir -p /etc/systemd/system/ && \
-    cp /app/services/*.service /etc/systemd/system/
-
-# Enable and start necessary services
-RUN systemctl enable darkice.service ffmpeg-stream.service StreamManager.service
-
-# Start the Flask application
-CMD ["/bin/bash", "-c", "source /app/env/bin/activate && python /app/webserver.py"]
+# Set the entry point to start the Flask app
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["source /app/env/bin/activate && python /app/webserver.py"]
