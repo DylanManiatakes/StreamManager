@@ -7,7 +7,7 @@ REPO_URL="https://github.com/DylanManiatakes/StreamManager"
 
 # Install dependencies
 echo "Installing dependencies..."
-sudo apt update && sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev alsa-base git || {
+sudo apt update && sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev git || {
     echo "Dependency installation failed" >&2
     exit 1
 }
