@@ -20,6 +20,7 @@ pip install flask pyalsaaudio || {
     echo "Failed to install Python dependencies" >&2
     exit 1
 }
+mkdir -p "$INSTALL_DIR/recordings"
 
 # Copy application files
 echo "Copying application files..."
@@ -28,7 +29,8 @@ cp ./webserver.py "$INSTALL_DIR/webserver.py"
 cp -r ./templates/* "$INSTALL_DIR/templates/"
 cp -r ./static/* "$INSTALL_DIR/static/"
 cp -r ./scripts/* "$INSTALL_DIR/scripts/"
-chmod +x "$INSTALL_DIR/scripts/watchdog.sh"
+[ -f "$INSTALL_DIR/scripts/watchdog.sh" ] && chmod +x "$INSTALL_DIR/scripts/watchdog.sh"
+mkdir -p "$INSTALL_DIR/recordings"
 
 # Create DarkIce configuration
 echo "Creating default DarkIce configuration..."
@@ -65,7 +67,7 @@ After=network.target sound.target
 [Service]
 ExecStartPre=/bin/bash -c 'pgrep darkice || sudo systemctl start darkice'
 ExecStartPre=/bin/bash -c 'pgrep ffmpeg || echo "Starting FFmpeg if configured separately."'
-ExecStart=/bin/bash -c 'source $INSTALL_DIR/env/bin/activate && python3 $INSTALL_DIR/webserver.py'
+ExecStart=$INSTALL_DIR/env/bin/python3 $INSTALL_DIR/webserver.py
 WorkingDirectory=$INSTALL_DIR
 User=root
 Group=root
@@ -83,8 +85,6 @@ cat <<EOF > /etc/systemd/system/darkice.service
 [Unit]
 Description=DarkIce Streaming Service
 After=network.target StreamManager.service
-BindsTo=StreamManager.service
-PartOf=StreamManager.service
 
 [Service]
 ExecStart=/usr/bin/darkice -c /etc/darkice/darkice.cfg
@@ -101,10 +101,9 @@ cat <<EOF > /etc/systemd/system/ffmpeg-stream.service
 [Unit]
 Description=FFmpeg Stream Service
 After=network.target sound.target StreamManager.service
-BindsTo=StreamManager.service
-PartOf=StreamManager.service
 
 [Service]
+# NOTE: Verify that hw:0,0 is the correct ALSA device. Use \`arecord -l\` to list input devices.
 ExecStart=/usr/bin/ffmpeg -f alsa -i hw:0,0 -c:a libmp3lame -b:a 64k -f mp3 icecast://source:password@localhost:8000/stream
 Restart=always
 RestartSec=5
