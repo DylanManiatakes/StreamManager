@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule a Recording</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Schedule a Recording</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+        </nav>
+    </header>
+    <main>
+        <form id="recordingForm">
+            <section class="card">
+                <label for="filename">Filename (end with .wav):</label>
+                <input type="text" id="filename" name="filename" required>
+            </section>
+
+            <section class="card">
+                <label for="start_time">Start Time:</label>
+                <input type="datetime-local" id="start_time" name="start_time" required>
+            </section>
+
+            <section class="card">
+                <label for="end_time">End Time:</label>
+                <input type="datetime-local" id="end_time" name="end_time" required>
+            </section>
+
+            <button type="submit" class="btn">Schedule Recording</button>
+        </form>
+        <div id="statusMsg"></div>
+    </main>
+
+    <script>
+        document.getElementById('recordingForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const data = {
+                filename: document.getElementById('filename').value,
+                start_time: document.getElementById('start_time').value,
+                end_time: document.getElementById('end_time').value
+            };
+
+            const res = await fetch('/recordings/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            const msgBox = document.getElementById('statusMsg');
+            msgBox.textContent = result.message;
+            msgBox.style.color = result.status === 'success' ? 'green' : 'red';
+        });
+    </script>
+</body>
+</html>

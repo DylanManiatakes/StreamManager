@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage ALSA Devices</title>
+    <title>Audio Input Settings</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <header>
-        <h1>Manage ALSA Devices</h1>
+        <h1>Audio Input Settings</h1>
         <nav>
             <a href="/">Dashboard</a>
         </nav>
@@ -17,16 +17,11 @@
         <form method="POST">
             <section class="card">
                 <h2>Playback Device</h2>
-                <label for="playback_device">Select Playback Device:</label>
-                <select name="playback_device" id="playback_device" class="dropdown">
-                    {% for card in cards %}
-                        <option value="{{ card }}" {% if playback_device == card %}selected{% endif %}>{{ card }}</option>
-                    {% endfor %}
-                </select>
+                <p>Playback device selection is not used in this setup.</p>
             </section>
 
             <section class="card">
-                <h2>Microphone Device</h2>
+                <h2>Input Device (Microphone)</h2>
                 <label for="mic_device">Select Microphone Device:</label>
                 <select name="mic_device" id="mic_device" class="dropdown">
                     {% for mixer in mixers %}
@@ -36,10 +31,11 @@
             </section>
 
             <section class="card">
-                <h2>Volume</h2>
-                <label for="volume">Adjust Volume:</label>
+                <h2>Input Volume</h2>
+                <label for="volume">Adjust Input Volume:</label>
                 <input type="range" id="volume" name="volume" min="0" max="100" value="{{ volume }}" class="slider">
                 <span>{{ volume }}%</span>
+                <p class="small-note">This sets the capture level for your selected microphone input.</p>
             </section>
 
             <button type="submit" class="btn">Update Settings</button>
