@@ -56,8 +56,19 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="scheduleList">
-                    <!-- JavaScript will populate this -->
+                <tbody>
+                    {% for job in scheduled_jobs %}
+                    <tr>
+                        <td>{{ job.filename }}</td>
+                        <td>{{ job.start_time }}</td>
+                        <td>{{ job.recurrence }}</td>
+                        <td>
+                            <form method="post" action="/recordings/delete-schedule/{{ job.id }}" onsubmit="return confirm('Delete this schedule?');">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </section>

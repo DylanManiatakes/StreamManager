@@ -1,11 +1,3 @@
-# Job wrapper for scheduled recordings
-def job_wrapper(filename, duration, **kwargs):
-    run_time = datetime.now().strftime("%Y%m%d_%H%M")
-    dated_filename = f"{filename.rstrip('.wav')}_{run_time}.wav"
-    print(f"[{datetime.now()}] Firing job: {dated_filename} for {duration} seconds")
-    print("Recording job triggered.")
-    threading.Thread(target=record_audio, args=(dated_filename, duration)).start()
-
 from flask import Flask, request, jsonify, render_template, redirect, url_for, send_file, flash
 import subprocess
 import os
@@ -16,14 +8,12 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
 from datetime import datetime, timedelta, timezone
 import threading
-import json
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "streammanager-default-key")
 DARKICE_CONFIG_PATH = "/etc/darkice/darkice.cfg"
 RECORDINGS_DIR = "/opt/StreamManager/recordings"
 os.makedirs(RECORDINGS_DIR, exist_ok=True)
-
 
 scheduler = BackgroundScheduler(
     jobstores={'default': MemoryJobStore()},
@@ -33,48 +23,12 @@ scheduler = BackgroundScheduler(
 scheduler.start()
 print("Scheduler started:", scheduler.running)
 
-# Reload scheduled jobs from JSON
-schedule_file = "/opt/StreamManager/schedule.json"
-if os.path.exists(schedule_file):
-    try:
-        with open(schedule_file, "r") as f:
-            stored_jobs = json.load(f)
-        for job in stored_jobs:
-            job_id = job["id"]
-            filename = job["filename"]
-            start_time = datetime.fromisoformat(job["start_time"]).astimezone(timezone.utc)
-            end_time = datetime.fromisoformat(job["end_time"]).astimezone(timezone.utc)
-            duration = (end_time - start_time).total_seconds()
-            recurrence = job.get("recurrence", "once")
-            job_kwargs = {"filename": filename, "duration": duration, "start": start_time, "end": end_time}
-
-            if recurrence == "once":
-                if start_time > datetime.now(timezone.utc):
-                    scheduler.add_job(job_wrapper, trigger="date", run_date=start_time, id=job_id,
-                                      kwargs=job_kwargs, timezone=timezone.utc)
-            elif recurrence == "daily":
-                scheduler.add_job(job_wrapper, trigger=CronTrigger(hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                                  id=job_id, replace_existing=True, kwargs=job_kwargs)
-            elif recurrence == "weekly":
-                dow_str = start_time.strftime("%a").lower()
-                scheduler.add_job(job_wrapper, trigger=CronTrigger(day_of_week=dow_str, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                                  id=job_id, replace_existing=True, kwargs=job_kwargs)
-            elif recurrence == "monthly":
-                scheduler.add_job(job_wrapper, trigger=CronTrigger(day=start_time.day, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                                  id=job_id, replace_existing=True, kwargs=job_kwargs)
-            elif recurrence == "yearly":
-                scheduler.add_job(job_wrapper, trigger=CronTrigger(month=start_time.month, day=start_time.day, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                                  id=job_id, replace_existing=True, kwargs=job_kwargs)
-            print(f"[RESTORE] Job loaded: {job_id} (recurrence: {recurrence})")
-    except Exception as e:
-        print(f"[ERROR] Failed to reload schedule: {e}")
-
 # Dashboard route
 @app.route("/")
 def dashboard():
     darkice_status = check_service_status("darkice")
     jobs = scheduler.get_jobs()
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
 
     upcoming = None
     active_recording = is_recording_active()
@@ -84,34 +38,11 @@ def dashboard():
             if job.next_run_time and job.next_run_time > now:
                 upcoming = job.next_run_time
 
-    schedule_file = "/opt/StreamManager/schedule.json"
-    scheduled_jobs = []
-    if os.path.exists(schedule_file):
-        try:
-            with open(schedule_file, "r") as f:
-                all_jobs = json.load(f)
-
-            now_utc = datetime.now(timezone.utc)
-            scheduled_jobs = []
-            for job in all_jobs:
-                if job.get("recurrence") == "once":
-                    start = datetime.fromisoformat(job["start_time"]).astimezone(timezone.utc)
-                    if start > now_utc:
-                        scheduled_jobs.append(job)
-                else:
-                    scheduled_jobs.append(job)
-
-            with open(schedule_file, "w") as f:
-                json.dump(scheduled_jobs, f, indent=2)
-        except Exception as e:
-            print(f"Failed to load or update scheduled jobs: {e}")
-
     return render_template(
         "index.html",
         darkice_status=darkice_status,
         upcoming_recording=upcoming,
         recording_active=active_recording,
-        scheduled_jobs=scheduled_jobs
     )
 
 # Helper function to check service status
@@ -239,6 +170,26 @@ def record_audio(filename, duration_seconds):
     ]
     print("Running ffmpeg command:", " ".join(command))
     try:
+        result = subprocess.run(command, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        print("Recording completed:", filepath)
+        print("stdout:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Recording failed: {e}")
+        print("stderr:", e.stderr)
+
+
+    filepath = os.path.join(RECORDINGS_DIR, filename)
+    command = [
+        "ffmpeg",
+        "-f", "alsa",
+        "-i", "shared_input",
+        "-t", str(duration_seconds),
+        "-acodec", "pcm_s16le",
+        "-ar", "44100",
+        filepath
+    ]
+    print("Running ffmpeg command:", " ".join(command))
+    try:
         result = subprocess.run(command, check=True, stderr=subprocess.PIPE, text=True)
         print("Recording completed:", filepath)
     except subprocess.CalledProcessError as e:
@@ -249,7 +200,6 @@ def record_audio(filename, duration_seconds):
 @app.route("/recordings/schedule", methods=["POST"])
 def schedule_recording():
     data = request.get_json()
-    print(f"[DEBUG] Incoming schedule request: {data}")
     start_time_str = data.get("start_time")
     end_time_str = data.get("end_time")
     filename = data.get("filename")
@@ -267,67 +217,26 @@ def schedule_recording():
             flash("End time must be after start time", "error")
             return redirect(url_for("new_recording_form"))
 
+        def job_wrapper():
+            print(f"[{datetime.now()}] Firing job: {dated_filename} for {duration} seconds")
+            print("Recording job triggered.")
+            run_time = datetime.now().strftime("%Y%m%d_%H%M")
+            dated_filename = f"{filename.rstrip('.wav')}_{run_time}.wav"
+            threading.Thread(target=record_audio, args=(dated_filename, duration)).start()
+
         job_id = f"recording_{filename}_{start_time.timestamp()}"
 
-        job_kwargs = {"filename": filename, "duration": duration, "start": start_time, "end": end_time}
-
         if recurrence == "once":
-            scheduler.add_job(job_wrapper, trigger="date", run_date=start_time, id=job_id,
-                              kwargs=job_kwargs, timezone=timezone.utc)
-        elif recurrence == "daily":
-            scheduler.add_job(job_wrapper, trigger=CronTrigger(hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                              id=job_id, replace_existing=True, kwargs=job_kwargs)
-        elif recurrence == "weekly":
-            dow_str = start_time.strftime("%a").lower()  # e.g. "mon"
-            scheduler.add_job(job_wrapper, trigger=CronTrigger(day_of_week=dow_str, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                              id=job_id, replace_existing=True, kwargs=job_kwargs)
-        elif recurrence == "monthly":
-            scheduler.add_job(job_wrapper, trigger=CronTrigger(day=start_time.day, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                              id=job_id, replace_existing=True, kwargs=job_kwargs)
-        elif recurrence == "yearly":
-            scheduler.add_job(job_wrapper, trigger=CronTrigger(month=start_time.month, day=start_time.day, hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc),
-                              id=job_id, replace_existing=True, kwargs=job_kwargs)
+            scheduler.add_job(job_wrapper, trigger="date", run_date=start_time, id=job_id, kwargs={"start": start_time, "end": end_time}, timezone=timezone.utc)
+        elif recurrence == "monday":
+            scheduler.add_job(job_wrapper, trigger=CronTrigger(day_of_week="mon", hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc), id=job_id, replace_existing=True, kwargs={"start": start_time, "end": end_time})
+        elif recurrence == "thursday":
+            scheduler.add_job(job_wrapper, trigger=CronTrigger(day_of_week="thu", hour=start_time.hour, minute=start_time.minute, timezone=timezone.utc), id=job_id, replace_existing=True, kwargs={"start": start_time, "end": end_time})
         else:
             flash("Invalid recurrence option", "error")
             return redirect(url_for("new_recording_form"))
 
-        print(f"[DEBUG] Job added: {job_id} (recurrence: {recurrence}) at {start_time}")
-        print(f"[DEBUG] Total jobs in scheduler: {len(scheduler.get_jobs())}")
-        for job in scheduler.get_jobs():
-            print(f" - {job.id} -> Next run: {job.next_run_time}")
-
         print(f"Job scheduled: {job_id} → starts at {start_time} for {duration}s")
-
-        # Save schedule metadata
-        schedule_file = "/opt/StreamManager/schedule.json"
-        schedule_entry = {
-            "id": job_id,
-            "filename": filename,
-            "start_time": start_time_str,
-            "end_time": end_time_str,
-            "recurrence": recurrence
-        }
-        try:
-            if os.path.exists(schedule_file):
-                with open(schedule_file, "r") as f:
-                    schedule_data = json.load(f)
-            else:
-                schedule_data = []
-
-            # Remove expired one-time jobs
-            schedule_data = [
-                s for s in schedule_data
-                if s.get("recurrence") != "once" or datetime.fromisoformat(s["start_time"]).astimezone(timezone.utc) > datetime.now(timezone.utc)
-            ]
-
-            # Replace existing entry with same id if it exists
-            schedule_data = [s for s in schedule_data if s["id"] != job_id]
-            schedule_data.append(schedule_entry)
-
-            with open(schedule_file, "w") as f:
-                json.dump(schedule_data, f, indent=2)
-        except Exception as e:
-            print("Failed to write schedule file:", e)
 
         flash("Recording scheduled successfully", "success")
         return redirect(url_for("dashboard"))
@@ -374,60 +283,19 @@ def download_recording(filename):
 # Serve form to schedule new recording
 @app.route("/recordings/new", methods=["GET"])
 def new_recording_form():
-    schedule_file = "/opt/StreamManager/schedule.json"
-    scheduled_jobs = []
-    if os.path.exists(schedule_file):
-        try:
-            with open(schedule_file, "r") as f:
-                scheduled_jobs = json.load(f)
-        except Exception as e:
-            print(f"Failed to load scheduled jobs: {e}")
-    return render_template("new_recording.html", scheduled_jobs=scheduled_jobs)
+    return render_template("new_recording.html")
 
 def is_recording_active():
     now = datetime.now(timezone.utc)
     for job in scheduler.get_jobs():
         if "recording_" in job.id:
+            # Parse start and end from job kwargs if available
             start = job.kwargs.get("start")
             end = job.kwargs.get("end")
-            if start and end:
-                if start <= now <= end:
-                    return True
-            else:
-                # Fallback: estimate duration from job metadata
-                if job.next_run_time:
-                    estimated_start = job.next_run_time
-                    estimated_end = estimated_start + timedelta(seconds=job.kwargs.get("duration", 60))
-                    if estimated_start <= now <= estimated_end:
-                        return True
+            if start and end and start <= now <= end:
+                return True
     return False
 
-
-# Delete a scheduled recording by job ID
-@app.route("/recordings/delete-schedule/<job_id>", methods=["POST"])
-def delete_schedule(job_id):
-    try:
-        scheduler.remove_job(job_id)
-    except Exception as e:
-        print(f"[ERROR] Failed to remove scheduler job: {e}")
-
-    # Remove from schedule.json
-    schedule_file = "/opt/StreamManager/schedule.json"
-    if os.path.exists(schedule_file):
-        try:
-            with open(schedule_file, "r") as f:
-                data = json.load(f)
-            data = [s for s in data if s["id"] != job_id]
-            with open(schedule_file, "w") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"[ERROR] Failed to update schedule.json: {e}")
-
-    flash("Schedule deleted", "success")
-    return redirect(url_for("new_recording_form"))
-
-
-# Delete a recording file by filename
 @app.route("/recordings/delete/<filename>", methods=["POST"])
 def delete_recording(filename):
     path = os.path.join(RECORDINGS_DIR, filename)
@@ -444,14 +312,6 @@ def trigger_test():
     print("Trigger test hit. Scheduling 5s job.")
     scheduler.add_job(lambda: print("🔥 Test job fired!"), trigger='date', run_date=datetime.now(timezone.utc) + timedelta(seconds=5))
     return "Scheduled test job."
-
-@app.route("/test-schedule")
-def test_schedule():
-    now = datetime.now(timezone.utc) + timedelta(seconds=10)
-    job_id = f"test_job_{now.timestamp()}"
-    scheduler.add_job(lambda: print("🔥 Test job fired from /test-schedule"), trigger="date", run_date=now, id=job_id)
-    print(f"[DEBUG] Test job added: {job_id}")
-    return "Test job scheduled."
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=False)

@@ -4,14 +4,85 @@
     <meta charset="UTF-8">
     <title>StreamManager Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #fafafa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #263238;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        section {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+        h2 {
+            margin-top: 0;
+        }
+        button {
+            background-color: #00796B;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            margin-right: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover {
+            background-color: #004D40;
+        }
+        ul {
+            padding-left: 1em;
+        }
+        .navigation ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .navigation li {
+            margin-bottom: 10px;
+        }
+        .navigation a {
+            text-decoration: none;
+            color: #00796B;
+            font-weight: 500;
+        }
+        .navigation a:hover {
+            text-decoration: underline;
+        }
+        iframe {
+            display: block;
+            margin-top: 15px;
+            border: none;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 40px;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1 style="text-align: center; margin-top: 20px;">📡 StreamManager Dashboard</h1>
+        <h1>📡 StreamManager Dashboard</h1>
     </header>
-
-    <main style="max-width: 800px; margin: 0 auto; padding: 20px;">
-        <section class="status" style="background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+    <main>
+        <section class="status">
             <h2>Service Status</h2>
             <ul>
                 <li><strong>DarkIce:</strong> {{ darkice_status }}</li>
@@ -24,27 +95,59 @@
                     {% endif %}
                 </li>
             </ul>
+            <h3>Upcoming Scheduled Recordings</h3>
+            {% if scheduled_jobs %}
+                <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; border-bottom: 1px solid #ccc;">Filename</th>
+                            <th style="text-align:left; border-bottom: 1px solid #ccc;">Start</th>
+                            <th style="text-align:left; border-bottom: 1px solid #ccc;">End</th>
+                            <th style="text-align:left; border-bottom: 1px solid #ccc;">Repeat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for job in scheduled_jobs %}
+                        <tr>
+                            <td>{{ job.filename }}</td>
+                            <td>{{ job.start_time }}</td>
+                            <td>{{ job.end_time }}</td>
+                            <td>{{ job.recurrence }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No scheduled recordings found.</p>
+            {% endif %}
         </section>
 
-        <section class="actions" style="background: #e0f7fa; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+        <section class="actions">
             <h2>System Actions</h2>
-            <form method="post" action="/reboot" onsubmit="return confirm('Are you sure you want to reboot this machine?');" style="margin-bottom: 10px;">
-                <button type="submit" style="padding: 10px 20px;">Reboot System</button>
+            <form method="post" action="/reboot" onsubmit="return confirm('Are you sure you want to reboot this machine?');">
+                <button type="submit">Reboot System</button>
             </form>
-            <form method="post" action="/darkice/restart">
-                <button type="submit" style="padding: 10px 20px;">Restart DarkIce</button>
+            <form method="post" action="/darkice/restart" style="margin-top: 10px;">
+                <button type="submit">Restart DarkIce</button>
             </form>
         </section>
 
-        <section class="navigation" style="background: #f3e5f5; padding: 15px; border-radius: 6px;">
+        <section class="navigation">
             <h2>Navigation</h2>
-            <ul style="list-style-type: none; padding-left: 0;">
+            <ul>
                 <li><a href="/darkice/edit">📝 Edit DarkIce Config</a></li>
                 <li><a href="/alsa/manage">🎚 Audio Input Settings</a></li>
                 <li><a href="/recordings/new">⏱ Schedule a Recording</a></li>
                 <li><a href="/recordings">📁 View Recordings</a></li>
             </ul>
+            <iframe width="100%" height="245px" src="https://api.broadcastify.com/embed/player/?key=5280516&feedId=28055&html5=1&stats=1&as=1">
+                Your browser does not support iFrames.
+            </iframe>
         </section>
+
+        <footer>
+            <p>StreamManager &copy; 2024 | Built by Dylan Maniatakes</p>
+        </footer>
     </main>
 </body>
 </html>

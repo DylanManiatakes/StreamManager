@@ -3,7 +3,7 @@
 echo "Starting StreamManager installer..."
 
 INSTALL_DIR="/opt/StreamManager"
-REPO_URL="https://github.com/DylanManiatakes/StreamManager.git"
+REPO_URL="https://github.com/DylanManiatakes/StreamManager"
 
 # Install dependencies
 echo "Installing dependencies..."
