@@ -29,18 +29,51 @@
                 <input type="datetime-local" id="end_time" name="end_time" required>
             </section>
 
+            <section class="card">
+                <input type="checkbox" id="recurring" name="recurring">
+                <label for="recurring">Repeat this recording</label>
+                <select id="recurrence" name="recurrence" style="margin-left: 10px;">
+                    <option value="none">Select Interval</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+            </section>
+
             <button type="submit" class="btn">Schedule Recording</button>
         </form>
         <div id="statusMsg"></div>
+
+        <section class="card" style="margin-top: 30px;">
+            <h2>Scheduled Recordings</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Start Time</th>
+                        <th>Recurrence</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleList">
+                    <!-- JavaScript will populate this -->
+                </tbody>
+            </table>
+        </section>
     </main>
 
     <script>
         document.getElementById('recordingForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            const isRecurring = document.getElementById('recurring').checked;
+            const recurrence = isRecurring ? document.getElementById('recurrence').value : 'once';
+
             const data = {
                 filename: document.getElementById('filename').value,
                 start_time: document.getElementById('start_time').value,
-                end_time: document.getElementById('end_time').value
+                end_time: document.getElementById('end_time').value,
+                recurrence: recurrence
             };
 
             const res = await fetch('/recordings/schedule', {

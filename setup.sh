@@ -1,73 +1,60 @@
 #!/bin/bash
 
-echo "Starting Stream Full Installer..."
+echo "Starting StreamManager installer..."
 
-# Update system and install dependencies
-echo "Updating system and installing dependencies..."
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev alsa-base || {
-    echo "Failed to install required packages" >&2
+INSTALL_DIR="/opt/StreamManager"
+REPO_URL="https://github.com/DylanManiatakes/StreamManager.git"
+
+# Install dependencies
+echo "Installing dependencies..."
+sudo apt update && sudo apt install -y darkice ffmpeg python3 python3-pip python3-venv libasound2-dev alsa-base git || {
+    echo "Dependency installation failed" >&2
     exit 1
 }
 
-# Set up Python environment
+# Preserve DarkIce config if it exists
+if [ -f /etc/darkice/darkice.cfg ]; then
+    echo "Preserving existing DarkIce config"
+    sudo cp /etc/darkice/darkice.cfg /tmp/darkice.cfg.bak
+fi
+
+# Clone or update the StreamManager repo
+if [ ! -d "$INSTALL_DIR/.git" ]; then
+    echo "Cloning repository..."
+    sudo git clone "$REPO_URL" "$INSTALL_DIR"
+else
+    echo "Updating existing repository..."
+    cd "$INSTALL_DIR" || exit
+    sudo git pull
+fi
+
+# Restore DarkIce config if backed up
+if [ -f /tmp/darkice.cfg.bak ]; then
+    echo "Restoring preserved DarkIce config"
+    sudo cp /tmp/darkice.cfg.bak /etc/darkice/darkice.cfg
+fi
+
+# Set up Python virtual environment
 echo "Setting up Python environment..."
-INSTALL_DIR="/opt/StreamManager"
-mkdir -p "$INSTALL_DIR"
 python3 -m venv "$INSTALL_DIR/env"
 source "$INSTALL_DIR/env/bin/activate"
-pip install flask pyalsaaudio || {
-    echo "Failed to install Python dependencies" >&2
-    exit 1
-}
-mkdir -p "$INSTALL_DIR/recordings"
+pip install --upgrade pip
+pip install flask pyalsaaudio apscheduler
 
-# Copy application files
+# Copy templates and static files
 echo "Copying application files..."
-mkdir -p "$INSTALL_DIR/templates" "$INSTALL_DIR/static" "$INSTALL_DIR/scripts"
-cp ./webserver.py "$INSTALL_DIR/webserver.py"
-cp -r ./templates/* "$INSTALL_DIR/templates/"
-cp -r ./static/* "$INSTALL_DIR/static/"
-cp -r ./scripts/* "$INSTALL_DIR/scripts/"
-[ -f "$INSTALL_DIR/scripts/watchdog.sh" ] && chmod +x "$INSTALL_DIR/scripts/watchdog.sh"
 mkdir -p "$INSTALL_DIR/recordings"
+sudo cp -r "$INSTALL_DIR/templates" "$INSTALL_DIR/static" "$INSTALL_DIR/scripts" /opt/StreamManager/
 
-# Create DarkIce configuration
-echo "Creating default DarkIce configuration..."
-mkdir -p /etc/darkice
-cat <<EOF > /etc/darkice/darkice.cfg
-[general]
-duration        = 0
-bufferSecs      = 5
-reconnect       = yes
-
-[input]
-device          = default
-sampleRate      = 44100
-bitsPerSample   = 16
-channel         = 1
-
-[icecast2-0]
-bitrateMode     = cbr
-format          = mp3
-bitrate         = 64
-server          = icecast.broadcastify.com
-port            = 8000
-password        = YOUR_PASSWORD
-mountPoint      = YOUR_MOUNTPOINT
-EOF
-
-# Install systemd service for StreamManager
-echo "Installing systemd service for StreamManager..."
-cat <<EOF > /etc/systemd/system/StreamManager.service
+# Install systemd services
+echo "Installing systemd services..."
+sudo tee /etc/systemd/system/StreamManager.service > /dev/null <<EOF
 [Unit]
 Description=Stream Manager
 After=network.target sound.target
 
 [Service]
-ExecStartPre=/bin/bash -c 'pgrep darkice || sudo systemctl start darkice'
-ExecStartPre=/bin/bash -c 'pgrep ffmpeg || echo "Starting FFmpeg if configured separately."'
-ExecStart=$INSTALL_DIR/env/bin/python3 $INSTALL_DIR/webserver.py
+ExecStart=/bin/bash -c 'source $INSTALL_DIR/env/bin/activate && python3 $INSTALL_DIR/webserver.py'
 WorkingDirectory=$INSTALL_DIR
 User=root
 Group=root
@@ -79,9 +66,7 @@ Environment="PYTHONUNBUFFERED=1"
 WantedBy=multi-user.target
 EOF
 
-# Install systemd service for DarkIce
-echo "Installing systemd service for DarkIce..."
-cat <<EOF > /etc/systemd/system/darkice.service
+sudo tee /etc/systemd/system/darkice.service > /dev/null <<EOF
 [Unit]
 Description=DarkIce Streaming Service
 After=network.target StreamManager.service
@@ -95,29 +80,12 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-# Install systemd service for FFmpeg
-echo "Installing systemd service for FFmpeg..."
-cat <<EOF > /etc/systemd/system/ffmpeg-stream.service
-[Unit]
-Description=FFmpeg Stream Service
-After=network.target sound.target StreamManager.service
-
-[Service]
-# NOTE: Verify that hw:0,0 is the correct ALSA device. Use \`arecord -l\` to list input devices.
-ExecStart=/usr/bin/ffmpeg -f alsa -i hw:0,0 -c:a libmp3lame -b:a 64k -f mp3 icecast://source:password@localhost:8000/stream
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Reload and enable services
-echo "Reloading and enabling systemd services..."
+# Reload systemd and start services
+echo "Enabling and starting services..."
 sudo systemctl daemon-reload
 sudo systemctl enable StreamManager.service
 sudo systemctl enable darkice.service
-sudo systemctl enable ffmpeg-stream.service
-sudo systemctl start StreamManager.service
+sudo systemctl restart StreamManager.service
+sudo systemctl restart darkice.service
 
-echo "Stream Manager and dependent services installed and started!"
+echo "StreamManager installation complete!"

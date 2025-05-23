@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Past Recordings</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Recorded Streams</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+        </nav>
+    </header>
+
+    <main>
+        {% if recordings %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; border-bottom: 1px solid #ccc;">Filename</th>
+                        <th style="text-align: left; border-bottom: 1px solid #ccc;">Size</th>
+                        <th style="text-align: left; border-bottom: 1px solid #ccc;">Last Modified</th>
+                        <th style="text-align: left; border-bottom: 1px solid #ccc;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in recordings %}
+                        <tr>
+                            <td><a href="{{ url_for('download_recording', filename=file.name) }}">{{ file.name }}</a></td>
+                            <td>{{ file.size }} KB</td>
+                            <td>{{ file.modified }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('delete_recording', filename=file.name) }}" onsubmit="return confirm('Delete this recording?');">
+                                    <button type="submit">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No recordings found.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

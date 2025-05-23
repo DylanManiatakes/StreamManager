@@ -2,60 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Broadcastify Manager</title>
+    <title>StreamManager Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <header>
-        <h1>Broadcastify Stream Manager</h1>
-        <nav>
-            <a href="/">Dashboard</a>
-            <a href="/darkice/edit">Edit DarkIce Config</a>
-        </nav>
+        <h1 style="text-align: center; margin-top: 20px;">📡 StreamManager Dashboard</h1>
     </header>
-    <main>
-        <section class="card">
-            <h2>Service Status</h2>
-            <p><strong>DarkIce:</strong> <span id="darkice-status">{{ darkice_status }}</span></p>
-            <p><strong>FFmpeg:</strong> <span id="ffmpeg-status">{{ ffmpeg_status }}</span></p>
-            <p><strong>Icecast:</strong> <span id="icecast-status">{{ icecast_status }}</span></p>    
 
+    <main style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <section class="status" style="background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+            <h2>Service Status</h2>
+            <ul>
+                <li><strong>DarkIce:</strong> {{ darkice_status }}</li>
+                <li><strong>Recording Active:</strong> {% if recording_active %}Yes{% else %}No{% endif %}</li>
+                <li><strong>Next Scheduled Recording:</strong>
+                    {% if upcoming_recording %}
+                        {{ upcoming_recording.strftime('%A, %B %d at %I:%M %p') }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </li>
+            </ul>
         </section>
-        <section class="card">
-            <h2>Controls</h2>
-            <button onclick="restartService('/darkice/restart')">Restart DarkIce</button>
-            <button onclick="restartService('/ffmpeg/restart')">Restart FFmpeg</button>
-            <button onclick="restartService('/icecast/restart')">Restart IceCast</button>
+
+        <section class="actions" style="background: #e0f7fa; padding: 15px; margin-bottom: 20px; border-radius: 6px;">
+            <h2>System Actions</h2>
+            <form method="post" action="/reboot" onsubmit="return confirm('Are you sure you want to reboot this machine?');" style="margin-bottom: 10px;">
+                <button type="submit" style="padding: 10px 20px;">Reboot System</button>
+            </form>
+            <form method="post" action="/darkice/restart">
+                <button type="submit" style="padding: 10px 20px;">Restart DarkIce</button>
+            </form>
         </section>
-        <section class="card">
-            <h2>ALSA Mixer</h2>
-            <p>Adjust volume and other sound settings.</p>
-            <a href="/alsa/manage" class="btn">Manage ALSA</a>
+
+        <section class="navigation" style="background: #f3e5f5; padding: 15px; border-radius: 6px;">
+            <h2>Navigation</h2>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li><a href="/darkice/edit">📝 Edit DarkIce Config</a></li>
+                <li><a href="/alsa/manage">🎚 Audio Input Settings</a></li>
+                <li><a href="/recordings/new">⏱ Schedule a Recording</a></li>
+                <li><a href="/recordings">📁 View Recordings</a></li>
+            </ul>
         </section>
-        <section class="card">
-            <h2>Icecast Status</h2>
-            <p>Stream Status: <span id="icecast-status">{{ icecast_status }}</span></p>
-            <button onclick="openIcecast()">View Icecast Server</button>
-        </section>
-        <script>
-            function openIcecast() {
-                // Get the current host and dynamically redirect to port 8000
-                const host = window.location.hostname;
-                window.open(`http://${host}:8000`, "_blank");
-            }
-        </script>
     </main>
-    <footer>
-        <p>Broadcastify Stream Manager &copy; 2024 | Built by Dylan Maniatakes</p>
-    </footer>
-    <script>
-        function restartService(endpoint) {
-            fetch(endpoint, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => console.error('Error:', error));
-        }
-    </script>
 </body>
 </html>

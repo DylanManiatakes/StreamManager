@@ -2,47 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Input Settings</title>
+    <title>ALSA Audio Input Management</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <header>
-        <h1>Audio Input Settings</h1>
-        <nav>
-            <a href="/">Dashboard</a>
-        </nav>
-    </header>
-    <main>
-        <form method="POST">
-            <section class="card">
-                <h2>Playback Device</h2>
-                <p>Playback device selection is not used in this setup.</p>
-            </section>
+<h1>ALSA Audio Input Management</h1>
 
-            <section class="card">
-                <h2>Input Device (Microphone)</h2>
-                <label for="mic_device">Select Microphone Device:</label>
-                <select name="mic_device" id="mic_device" class="dropdown">
-                    {% for mixer in mixers %}
-                        <option value="{{ mixer }}" {% if mic_device == mixer %}selected{% endif %}>{{ mixer }}</option>
-                    {% endfor %}
-                </select>
-            </section>
+<form method="POST" action="/alsa/manage">
+    <section class="card">
+        <h2>Input Volume</h2>
+        <label for="volume">Adjust Input (Capture) Volume:</label>
+        <input type="range" id="volume" name="volume" min="0" max="100" value="{{ volume }}" class="slider">
+        <span id="volumeDisplay">{{ volume }}%</span>
+        <p class="small-note">This controls the microphone capture volume in real time.</p>
+    </section>
 
-            <section class="card">
-                <h2>Input Volume</h2>
-                <label for="volume">Adjust Input Volume:</label>
-                <input type="range" id="volume" name="volume" min="0" max="100" value="{{ volume }}" class="slider">
-                <span>{{ volume }}%</span>
-                <p class="small-note">This sets the capture level for your selected microphone input.</p>
-            </section>
+    <button type="submit" class="btn">Apply Input Volume</button>
+</form>
 
-            <button type="submit" class="btn">Update Settings</button>
-        </form>
-    </main>
-    <footer>
-        <p>StreamManager &copy; 2024 | Built by Dylan Maniatakes</p>
-    </footer>
+<script>
+    const slider = document.getElementById('volume');
+    const display = document.getElementById('volumeDisplay');
+    if (slider && display) {
+        slider.addEventListener('input', () => {
+            display.textContent = slider.value + '%';
+        });
+    }
+</script>
+
 </body>
 </html>
